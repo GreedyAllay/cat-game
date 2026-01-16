@@ -20,57 +20,8 @@ float playerH = 10;
 
 bool freecam = true;
 
-void handleControls() {
-    if (freecam) {
-        if (IsKeyDown(KEY_D)) {
-            cameraX -= 10;
-        }
-        if (IsKeyDown(KEY_A)) {
-            cameraX += 10;
-        }
-        if (IsKeyDown(KEY_W)) {
-            cameraY += 10;
-        }
-        if (IsKeyDown(KEY_S)) {
-            cameraY -= 10;
-        }
-    }
-    else {
-        if (IsKeyDown(KEY_D)) {
-            playerX += 10;
-        }
-        if (IsKeyDown(KEY_A)) {
-            playerX -= 10;
-        }
-        if (IsKeyDown(KEY_W)) {
-            playerY -= 10;
-        }
-        if (IsKeyDown(KEY_S)) {
-            playerY += 10;
-        }
-    }
-    if (IsKeyPressed(KEY_LEFT_SHIFT)) {
-        freecam = !freecam;
-    }
-
-}
-
 void drawObject(int x, int y, int w, int h) {
     DrawRectangle(x + cameraX, y + cameraY, w, h, RED);
-}
-
-void handleCollisions() {
-    for (int i = 0; i < stage.size(); i++) {
-#if 0
-        std::cout << "iteration " << i << "\n";
-
-        std::cout << stage[i][0] << "\n";
-        std::cout << stage[i][1] << "\n";
-        std::cout << stage[i][2] << "\n";
-        std::cout << stage[i][3] << "\n";
-        std::cout << "-----\n";
-#endif
-    }
 }
 
 bool collide(int x1, int y1, int w1, int h1, int x2, int y2, int w2, int h2) {
@@ -93,6 +44,7 @@ bool collide(int x1, int y1, int w1, int h1, int x2, int y2, int w2, int h2) {
 
     //for debugging, draw the points of your mom first
 
+#if 0
     //BOX 1
     drawObject(topLeftXA, topLeftYA, 10, 10); //left top corner
     drawObject(topRightXA, topRightYA, 10, 10); //right top corner
@@ -106,6 +58,11 @@ bool collide(int x1, int y1, int w1, int h1, int x2, int y2, int w2, int h2) {
     drawObject(bottomLeftXB, bottomLeftYB, 10, 10); //left bottom corner 
     drawObject(bottomRightXB, bottomRightYB, 10, 10); //right bottom corner
 
+#endif
+
+    drawObject(x1, y1, w1, h1);
+    drawObject(x2, y2, w2, h2);
+
     if (topLeftXA < topRightXB &&
         topLeftYA < bottomRightYB &&
         topRightXA > bottomLeftXB &&
@@ -114,6 +71,67 @@ bool collide(int x1, int y1, int w1, int h1, int x2, int y2, int w2, int h2) {
 
 
     return false;
+}
+
+bool checkCollisions(int id) {
+    for (int i = 0; i < stage.size(); i++) {
+        if (collide(stage[i][0], stage[i][1], stage[i][2], stage[i][3], stage[id][0], stage[id][1], stage[id][2], stage[id][3])) {
+            return true;
+        }
+    }
+}
+
+void handleControls() {
+    if (freecam) {
+        if (IsKeyDown(KEY_D)) {
+            cameraX -= 10;
+        }
+        if (IsKeyDown(KEY_A)) {
+            cameraX += 10;
+        }
+        if (IsKeyDown(KEY_W)) {
+            cameraY += 10;
+        }
+        if (IsKeyDown(KEY_S)) {
+            cameraY -= 10;
+        }
+    }
+    else {
+        if (IsKeyDown(KEY_D)) {
+            if (checkCollisions(0)) {
+                playerX += 10;
+
+            }
+        }
+        if (IsKeyDown(KEY_A)) {
+            playerX -= 10;
+        }
+        if (IsKeyDown(KEY_W)) {
+            playerY -= 10;
+        }
+        if (IsKeyDown(KEY_S)) {
+            playerY += 10;
+        }
+    }
+    if (IsKeyPressed(KEY_LEFT_SHIFT)) {
+        freecam = !freecam;
+    }
+
+}
+
+void handleCollisions() {
+    for (int i = 0; i < stage.size(); i++) {
+#if 0
+        std::cout << "iteration " << i << "\n";
+
+        std::cout << stage[i][0] << "\n";
+        std::cout << stage[i][1] << "\n";
+        std::cout << stage[i][2] << "\n";
+        std::cout << stage[i][3] << "\n";
+        std::cout << "-----\n";
+#endif
+
+    }
 }
 
 void defineObject(int x, int y, int w, int h) {
@@ -125,6 +143,10 @@ void modObject(int id, int x, int y, int w, int h) {
     stage[id][1] = y;
     stage[id][2] = w;
     stage[id][3] = h;
+}
+
+void handleMovement() {
+
 }
 
 int main(void)
