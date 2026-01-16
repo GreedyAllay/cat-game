@@ -46,7 +46,7 @@ bool collide(int x1, int y1, int w1, int h1, int x2, int y2, int w2, int h2) {
     drawObject(x1, y1, w1, h1);
     drawObject(x2, y2, w2, h2);
 
-    //its so smoll yet so incredibly powerful and painful to do holy crap this took forever
+    //its so smoll yet so incredibly powerful and painful to do
     if (x1 < w2 + x2 &&
         y1 < y2 + h2 &&
         w1 + x1 > x2 &&
