@@ -18,7 +18,7 @@ std::vector<int> playerHitbox = {50, 50}; //w, h
 float playerX = 0;
 float playerY = 0;
 
-bool freecam = true;
+bool freecam = false;
 bool onFloor = true;
 
 void drawObject(int x, int y, int w, int h) {
@@ -126,11 +126,11 @@ void handleControls() {
             setXvel(0, -10);
         }
         if (IsKeyDown(KEY_W)) {
-            if(onFloor)setYvel(0, -10);
+            if(onFloor)setYvel(0, -15);
             
         }
-        }
         if (IsKeyDown(KEY_S)) {
+        }
     }
     if (IsKeyPressed(KEY_LEFT_SHIFT)) {
         freecam = !freecam;
@@ -172,8 +172,8 @@ int main(void)
     SetTargetFPS(60);
 
     defineObject(100, 50, playerHitbox[0], playerHitbox[1], 1);
-    defineObject(100, 100, 200, 200, 0);
-    defineObject(200, 150, 200, 200, 0);
+    defineObject(0, 100, 20000, 200, 0);
+    defineObject(-300, -500, 400, 2000, 0);
     ClearBackground(RAYWHITE);
 
     while (!WindowShouldClose())
@@ -191,7 +191,6 @@ int main(void)
             cameraY = ((0-playerY) - objects[0][3] / 2) + screenHeight / 2;
         }
 
-
         if (checkCollisions(0)) {
             ClearBackground(GREEN);
             DrawText("overlapping", 0, 0, 20, RED);
@@ -199,6 +198,11 @@ int main(void)
         else {
             ClearBackground(YELLOW);
         }
+
+        if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
+            defineObject((GetMouseX())-cameraX, (GetMouseY())-cameraY, 10, 10, 1);
+        }
+
 
         BeginDrawing();
 
