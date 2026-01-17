@@ -79,21 +79,20 @@ void moveObject(int id, int dx, int dy) {
     float stepX = (dx < 0 ? -1 : 1);
     float stepY = (dy < 0 ? -1 : 1);
     for (int i = 0; i < abs(dx); i++) {
+        objects[id][0] += stepX;
+
         if (checkCollisions(id)) {
             objects[id][0] -= stepX;
+            objects[id][5] = 0;
             break;
-        }
-        else {
-            objects[id][0] += stepX;
         }
     }
     for (int i = 0; i < abs(dy); i++) {
+        objects[id][1] += stepY;
         if (checkCollisions(id)) {
             objects[id][1] -= stepY;
+            objects[id][6] = 0;
             break;
-        }
-        else {
-            objects[id][1] += stepY;
         }
     }
 }
