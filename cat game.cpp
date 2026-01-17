@@ -2,12 +2,14 @@
 #include <string>
 #include <vector>
 #include <iostream>
+#include <fstream>
 
 const int screenWidth = 800;
 const int screenHeight = 450;
 
 float cameraX = 0;
 float cameraY = 0;
+float cameraZ = 1;
 
 float gravity = 9.81;
 
@@ -22,7 +24,7 @@ bool freecam = false;
 bool onFloor = true;
 
 void drawObject(int x, int y, int w, int h) {
-    DrawRectangle(x + cameraX, y + cameraY, w, h, RED);
+    DrawRectangle(((x + cameraX)*cameraZ)+screenWidth / 2, ((y + cameraY)* cameraZ)+ screenHeight / 2, w * cameraZ, h * cameraZ, RED);
 }
 
 void handleObjects() {
@@ -104,6 +106,12 @@ void setXvel(int id, int xv) { objects[id][5] = xv; }
 void setYvel(int id, int yv) { objects[id][6] = yv; }
 
 void handleControls() {
+        if (IsKeyDown(KEY_MINUS)) {
+            cameraZ /= 1.1;
+        }
+        if (IsKeyDown(KEY_EQUAL)) {
+            cameraZ *= 1.1;
+        }
     if (freecam) {
         if (IsKeyDown(KEY_D)) {
             cameraX -= 10;
@@ -163,6 +171,51 @@ void handlePhysics() {
     }
 }
 
+void loadStage(std::string data) {
+    std::vector<int> obj;
+    std::string output;
+    for (int i = 0; i < data.length(); i++) {
+        if (data[i] == ' ') continue;
+        if (data[i] == ',' || data[i] == ';') {
+            obj.push_back(stoi(output));
+            std::cout << output << "\n";
+            output = "";
+        }
+        else {
+            output += data[i];
+
+        }
+    }
+    obj.push_back(stoi(output));
+    defineObject(obj[0], obj[1], obj[2], obj[3], obj[4]);
+ }
+#if 0
+void loadStage(std::string data) {
+    std::vector<int> obj;
+    std::string output;
+    for (int i = 0; i < data.length(); i++) {
+        if (data[i] == ' ') continue;
+        if (data[i] == ';') {
+            obj.push_back(stoi(output));
+            if (obj.size() != 5) continue;
+            defineObject(obj[0], obj[1], obj[2], obj[3], obj[4]);
+            obj.clear();
+            continue;
+        }
+        if (data[i] == ',') {
+            obj.push_back(stoi(output));
+            std::cout << output << "\n";
+            output = "";
+        }
+        else {
+            output += data[i];
+        }
+    }
+
+}
+
+#endif
+
 
 
 int main(void)
@@ -176,6 +229,21 @@ int main(void)
     defineObject(-300, -500, 400, 2000, 0);
     ClearBackground(RAYWHITE);
 
+    loadStage("100, -250, 50, 50, 1;300, -300, 50, 50, 1");
+    std::string text;
+
+    // Read from the text file
+    std::ifstream file("filename.txt");
+
+    // Use a while loop together with the getline() function to read the file line by line
+    while (getline(file, text)) {
+        // Output the text from the file
+        std::cout << text;
+    }
+
+    // Close the file
+    file.close();
+
     while (!WindowShouldClose())
     {
         handleControls();
@@ -187,8 +255,8 @@ int main(void)
 
         //ALL THIS CODE ONLY TO MOVE THE CAMERA 😭
         if (!freecam) {
-            cameraX = ((0-playerX) - objects[0][2] / 2) + screenWidth / 2;
-            cameraY = ((0-playerY) - objects[0][3] / 2) + screenHeight / 2;
+            cameraX = ((0-playerX) - objects[0][2] / 2);
+            cameraY = ((0-playerY) - objects[0][3] / 2);
         }
 
         if (checkCollisions(0)) {
@@ -200,7 +268,7 @@ int main(void)
         }
 
         if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
-            defineObject((GetMouseX())-cameraX, (GetMouseY())-cameraY, 10, 10, 1);
+            defineObject((GetMouseX())-cameraX, (GetMouseY())-cameraY, 50, 50, 1);
         }
 
 
@@ -218,6 +286,7 @@ int main(void)
         DrawText(std::to_string(cameraY).c_str(), 190, 220, 20, LIGHTGRAY);
         DrawText(std::to_string(freecam).c_str(), 190, 240, 20, LIGHTGRAY);
         DrawText(std::to_string(onFloor).c_str(), 190, 260, 20, LIGHTGRAY);
+        DrawText(std::to_string(cameraZ).c_str(), 190, 280, 20, LIGHTGRAY);
 
         EndDrawing();
 
