@@ -155,7 +155,7 @@ void handlePhysics() {
         int onfloor = 0;
         objects[i][5] /= 1.5;
         objects[i][6] += 1;
-        int tVel = 35;
+        int tVel = 30;
         if (abs(objects[i][6]) > tVel) {
             objects[i][6] = (objects[i][6] < 0) ? -tVel : tVel;
         }
