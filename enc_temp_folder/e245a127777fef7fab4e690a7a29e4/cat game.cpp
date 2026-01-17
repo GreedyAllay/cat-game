@@ -11,17 +11,28 @@ std::vector<std::vector<int>> stage;
 float cameraX = 0;
 float cameraY = 0;
 
-std::vector<int> player = {0, 100, 50, 50}; //x, y, w, h
+float gravity = 9.81;
+
+std::vector<std::vector<int>> objects; //x, y, w, h, physics
+
+std::vector<int> playerHitbox = {50, 50}; //w, h
 
 float playerX = 0;
 float playerY = 0;
-float playerW = 10;
-float playerH = 10;
 
 bool freecam = true;
 
+
+
 void drawObject(int x, int y, int w, int h) {
     DrawRectangle(x + cameraX, y + cameraY, w, h, RED);
+}
+
+void handleObjects() {
+    for (int i = 0; i < objects.size(); i++) {
+        drawObject(objects[i][0], objects[i][1], objects[i][2], objects[i][3]);
+    }
+
 }
 
 bool collide(int x1, int y1, int w1, int h1, int x2, int y2, int w2, int h2) {
@@ -40,13 +51,12 @@ bool collide(int x1, int y1, int w1, int h1, int x2, int y2, int w2, int h2) {
     drawObject(w2 + x2, y2, 10, 10); //right top corner
     drawObject(x2, y2 + h2, 10, 10); //left bottom corner 
     drawObject(x2 + w2, y2 + h2, 10, 10); //right bottom corner
-
 #endif
 
     drawObject(x1, y1, w1, h1);
     drawObject(x2, y2, w2, h2);
 
-    //its so smoll yet so incredibly powerful and painful to do
+    //its so smoll yet so incredibly powerful and painful to do holy crap this took forever
     if (x1 < w2 + x2 &&
         y1 < y2 + h2 &&
         w1 + x1 > x2 &&
@@ -59,10 +69,12 @@ bool collide(int x1, int y1, int w1, int h1, int x2, int y2, int w2, int h2) {
 
 bool checkCollisions(int id) {
     for (int i = 0; i < stage.size(); i++) {
-        if (collide(stage[i][0], stage[i][1], stage[i][2], stage[i][3], stage[id][0], stage[id][1], stage[id][2], stage[id][3])) {
+        if (id == i) continue;
+        if (collide(stage[id][0], stage[id][1], stage[id][2], stage[id][3], stage[i][0], stage[i][1], stage[i][2], stage[i][3])) {
             return true;
         }
     }
+    return false;
 }
 
 void handleControls() {
@@ -82,9 +94,8 @@ void handleControls() {
     }
     else {
         if (IsKeyDown(KEY_D)) {
-            if (checkCollisions(0)) {
+            if (!checkCollisions(0)) {
                 playerX += 10;
-
             }
         }
         if (IsKeyDown(KEY_A)) {
@@ -130,7 +141,9 @@ void modObject(int id, int x, int y, int w, int h) {
 }
 
 void handleMovement() {
-
+    while (checkCollisions(0)) {
+        playerX -= 1;
+    }
 }
 
 int main(void)
@@ -149,7 +162,9 @@ int main(void)
     {
         handleControls();
         handleCollisions();
-        if (collide(stage[0][0], stage[0][1], stage[0][2], stage[0][3], stage[1][0], stage[1][1], stage[1][2], stage[1][3])) {
+        handleObjects();
+
+        if (checkCollisions(0)) {
             ClearBackground(GREEN);
             DrawText("overlapping", 0, 0, 20, RED);
         }
@@ -163,9 +178,9 @@ int main(void)
 
         //drawObject(0, 0, 20, 20);
 
-        modObject(0, GetMouseX(), GetMouseY(), 67, 67);
         //render player
-        DrawRectangle(playerX + cameraX, playerY + cameraY, playerW, playerH, BLUE);
+        modObject(0, playerX, playerY, playerHitbox[0], playerHitbox[1]);
+
 
 
         DrawText(std::to_string(cameraX).c_str(), 190, 200, 20, LIGHTGRAY);
