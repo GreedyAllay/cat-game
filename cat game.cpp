@@ -88,12 +88,13 @@ void moveObject(int id, int dx, int dy) {
             break;
         }
     }
-    for (int i = 0; i < abs(dy); i++) {
+    if(id == 0) onFloor = false;
+    for (int i = 0; i < abs(dy); i++) { 
         objects[id][1] += stepY;
         if (checkCollisions(id)) {
             objects[id][1] -= stepY;
             objects[id][6] = 0;
-            onFloor = dy < 0;
+            if(!onFloor && id == 0) onFloor = dy > 0;
             break;
         }
     }
@@ -125,11 +126,11 @@ void handleControls() {
             setXvel(0, -10);
         }
         if (IsKeyDown(KEY_W)) {
-            setYvel(0, -10);
+            if(onFloor)setYvel(0, -10);
+            
+        }
         }
         if (IsKeyDown(KEY_S)) {
-            moveObject(0, 0, 10);
-        }
     }
     if (IsKeyPressed(KEY_LEFT_SHIFT)) {
         freecam = !freecam;
@@ -165,8 +166,8 @@ void handlePhysics() {
 
 
 int main(void)
-{
     InitWindow(screenWidth, screenHeight, "cat game");
+{
 
     SetTargetFPS(60);
 
