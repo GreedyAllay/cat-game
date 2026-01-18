@@ -86,9 +86,11 @@ void setYvel(int id, int yv) { objects[id][6] = yv; }
 void handleControls() {
     if (IsKeyDown(KEY_MINUS)) {
         cameraZ /= 1.1;
+        if (cameraZ < .01) cameraZ = .01;
     }
     if (IsKeyDown(KEY_EQUAL)) {
         cameraZ *= 1.1;
+        if (cameraZ > 10) cameraZ = 10;
     }
     if (freecam) {
         if (IsKeyDown(KEY_D)) {
@@ -186,7 +188,8 @@ int main(void)
         }
 
         if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
-            defineObject((GetMouseX()) - cameraX, (GetMouseY()) - cameraY, 10, 10, 1);
+            defineObject((GetMouseX() - screenWidth / 2) / cameraZ - cameraX, (GetMouseY() - screenHeight / 2) / cameraZ - cameraY, 10, 10, 1);
+            //some parts of only this line above is ai generated because I couldn't figure out for the love of me how to do this with zoom
         }
 
 
