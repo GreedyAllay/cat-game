@@ -2,7 +2,6 @@
 #include <string>
 #include <vector>
 #include <iostream>
-#include <fstream>
 
 const int screenWidth = 800;
 const int screenHeight = 450;
@@ -15,7 +14,7 @@ float gravity = 9.81;
 
 std::vector<std::vector<int>> objects; //0 x, 1 y, 2 w, 3 h, 4 physics, 5 xv, 6 yv, 7 onfloor
 
-std::vector<int> playerHitbox = {50, 50}; //w, h
+std::vector<int> playerHitbox = { 50, 50 }; //w, h
 
 float playerX = 0;
 float playerY = 0;
@@ -24,7 +23,7 @@ bool freecam = false;
 bool onFloor = true;
 
 void drawObject(int x, int y, int w, int h) {
-    DrawRectangle(((x + cameraX)*cameraZ)+screenWidth / 2, ((y + cameraY)* cameraZ)+ screenHeight / 2, w * cameraZ, h * cameraZ, RED);
+    DrawRectangle((x + cameraX) * cameraZ + screenWidth / 2, (y + cameraY) * cameraZ + screenHeight / 2, w*cameraZ, h*cameraZ, RED);
 }
 
 void handleObjects() {
@@ -35,29 +34,8 @@ void handleObjects() {
 }
 
 bool collide(int x1, int y1, int w1, int h1, int x2, int y2, int w2, int h2) {
-    //for debugging, draw the points of your mom first
 
-#if 0
-    //BOX 1
-    drawObject(x1, y1, 10, 10); //left top corner
-    drawObject(w1 + x1, y1, 10, 10); //right top corner
-    drawObject(x1, y1 + h1, 10, 10); //left bottom corner 
-    drawObject(x1 + w1, y1 + h1, 10, 10); //right bottom corner
-
-
-    //box 2
-    drawObject(x2, y2, 10, 10); //left top corner
-    drawObject(w2 + x2, y2, 10, 10); //right top corner
-    drawObject(x2, y2 + h2, 10, 10); //left bottom corner 
-    drawObject(x2 + w2, y2 + h2, 10, 10); //right bottom corner
-
-    drawObject(x1, y1, w1, h1);
-    drawObject(x2, y2, w2, h2);
-#endif
-
-
-
-    //its so smoll yet so incredibly powerful and painful to do holy crap this took forever
+    //its so smoll yet so incredibly powerful and painful to do holy crap this took forever check first commits
     if (x1 < w2 + x2 &&
         y1 < y2 + h2 &&
         w1 + x1 > x2 &&
@@ -90,13 +68,13 @@ void moveObject(int id, int dx, int dy) {
             break;
         }
     }
-    if(id == 0) onFloor = false;
-    for (int i = 0; i < abs(dy); i++) { 
+    if (id == 0) onFloor = false;
+    for (int i = 0; i < abs(dy); i++) {
         objects[id][1] += stepY;
         if (checkCollisions(id)) {
             objects[id][1] -= stepY;
             objects[id][6] = 0;
-            if(!onFloor && id == 0) onFloor = dy > 0;
+            if (!onFloor && id == 0) onFloor = dy > 0;
             break;
         }
     }
@@ -106,12 +84,12 @@ void setXvel(int id, int xv) { objects[id][5] = xv; }
 void setYvel(int id, int yv) { objects[id][6] = yv; }
 
 void handleControls() {
-        if (IsKeyDown(KEY_MINUS)) {
-            cameraZ /= 1.1;
-        }
-        if (IsKeyDown(KEY_EQUAL)) {
-            cameraZ *= 1.1;
-        }
+    if (IsKeyDown(KEY_MINUS)) {
+        cameraZ /= 1.1;
+    }
+    if (IsKeyDown(KEY_EQUAL)) {
+        cameraZ *= 1.1;
+    }
     if (freecam) {
         if (IsKeyDown(KEY_D)) {
             cameraX -= 10;
@@ -134,8 +112,8 @@ void handleControls() {
             setXvel(0, -10);
         }
         if (IsKeyDown(KEY_W)) {
-            if(onFloor)setYvel(0, -15);
-            
+            if (onFloor)setYvel(0, -15);
+
         }
         if (IsKeyDown(KEY_S)) {
         }
@@ -171,51 +149,6 @@ void handlePhysics() {
     }
 }
 
-void loadStage(std::string data) {
-    std::vector<int> obj;
-    std::string output;
-    for (int i = 0; i < data.length(); i++) {
-        if (data[i] == ' ') continue;
-        if (data[i] == ',' || data[i] == ';') {
-            obj.push_back(stoi(output));
-            std::cout << output << "\n";
-            output = "";
-        }
-        else {
-            output += data[i];
-
-        }
-    }
-    obj.push_back(stoi(output));
-    defineObject(obj[0], obj[1], obj[2], obj[3], obj[4]);
- }
-#if 0
-void loadStage(std::string data) {
-    std::vector<int> obj;
-    std::string output;
-    for (int i = 0; i < data.length(); i++) {
-        if (data[i] == ' ') continue;
-        if (data[i] == ';') {
-            obj.push_back(stoi(output));
-            if (obj.size() != 5) continue;
-            defineObject(obj[0], obj[1], obj[2], obj[3], obj[4]);
-            obj.clear();
-            continue;
-        }
-        if (data[i] == ',') {
-            obj.push_back(stoi(output));
-            std::cout << output << "\n";
-            output = "";
-        }
-        else {
-            output += data[i];
-        }
-    }
-
-}
-
-#endif
-
 
 
 int main(void)
@@ -229,21 +162,6 @@ int main(void)
     defineObject(-300, -500, 400, 2000, 0);
     ClearBackground(RAYWHITE);
 
-    loadStage("100, -250, 50, 50, 1;300, -300, 50, 50, 1");
-    std::string text;
-
-    // Read from the text file
-    std::ifstream file("filename.txt");
-
-    // Use a while loop together with the getline() function to read the file line by line
-    while (getline(file, text)) {
-        // Output the text from the file
-        std::cout << text;
-    }
-
-    // Close the file
-    file.close();
-
     while (!WindowShouldClose())
     {
         handleControls();
@@ -255,8 +173,8 @@ int main(void)
 
         //ALL THIS CODE ONLY TO MOVE THE CAMERA 😭
         if (!freecam) {
-            cameraX = ((0-playerX) - objects[0][2] / 2);
-            cameraY = ((0-playerY) - objects[0][3] / 2);
+            cameraX = ((0 - playerX) - objects[0][2] / 2);
+            cameraY = ((0 - playerY) - objects[0][3] / 2);
         }
 
         if (checkCollisions(0)) {
@@ -268,7 +186,7 @@ int main(void)
         }
 
         if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
-            defineObject((GetMouseX())-cameraX, (GetMouseY())-cameraY, 50, 50, 1);
+            defineObject((GetMouseX()) - cameraX, (GetMouseY()) - cameraY, 10, 10, 1);
         }
 
 
