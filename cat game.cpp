@@ -3,12 +3,17 @@
 #include <vector>
 #include <iostream>
 
+float framerate = 2400;
+
+
 const int screenWidth = 800;
 const int screenHeight = 450;
 
 float cameraX = 0;
 float cameraY = 0;
 float cameraZ = 1;
+
+float deltaTime = 0;
 
 float gravity = 9.81;
 
@@ -80,8 +85,8 @@ void moveObject(int id, int dx, int dy) {
     }
 }
 
-void setXvel(int id, int xv) { objects[id][5] = xv; }
-void setYvel(int id, int yv) { objects[id][6] = yv; }
+void setXvel(int id, int xv) { objects[id][5] = xv * (deltaTime * 60); }
+void setYvel(int id, int yv) { objects[id][6] = yv * (deltaTime * 60); }
 
 void handleControls() {
     if (IsKeyDown(KEY_MINUS)) {
@@ -151,13 +156,112 @@ void handlePhysics() {
     }
 }
 
+void unstuckObjects() {
+    //basically going thru every object and checking how much steps it takes in each direction to get out of colliding area, then choosing the closest one
+    //im kind of a genius, you gotta give me that
+
+    //it doesnt yet work tho
+    std::vector<int> stepCounts;
+    int steps = 0;
+    for (int i = 0; i < objects.size(); i++) {
+        //left
+        if (checkCollisions(i))
+        for (int j = 0; j < 100; j++) {
+            if (!checkCollisions(j)) break;
+            objects[i][0] -= 1;
+            steps++;
+        }
+        stepCounts.push_back(steps);
+        steps = 0;
+
+        //right
+        if (checkCollisions(i))
+            for (int j = 0; j < 100; j++) {
+                if (!checkCollisions(j)) break;
+                objects[i][0] += 1;
+                steps++;
+            }
+        stepCounts.push_back(steps);
+        steps = 0;
+
+        //up or down idk, you never know it with c++
+        if (checkCollisions(i))
+            for (int j = 0; j < 100; j++) {
+                if (!checkCollisions(j)) break;
+                objects[i][1] += 1;
+                steps++;
+            }
+        stepCounts.push_back(steps);
+        steps = 0;
+
+        //the opposite direction of that
+        if (checkCollisions(i))
+            for (int j = 0; j < 100; j++) {
+                if (!checkCollisions(j)) break;
+                objects[i][1] -= 1;
+                steps++;
+            }
+        stepCounts.push_back(steps);
+        steps = 0;
+
+        for (int i = 0; i > stepCounts.size(); i++) {
+
+        }
+    }
+}
+
+void loadStage(std::string data) {
+    std::vector<int> obj;
+    std::string output;
+    for (int i = 0; i < data.length(); i++) {
+        if (data[i] == ' ') continue;
+        if (data[i] == ',' || data[i] == ';') {
+            obj.push_back(stoi(output));
+            std::cout << output << "\n";
+            output = "";
+        }
+        else {
+            output += data[i];
+
+        }
+    }
+    obj.push_back(stoi(output));
+    defineObject(obj[0], obj[1], obj[2], obj[3], obj[4]);
+}
+#if 0
+void loadStage(std::string data) {
+    std::vector<int> obj;
+    std::string output;
+    for (int i = 0; i < data.length(); i++) {
+        if (data[i] == ' ') continue;
+        if (data[i] == ';') {
+            obj.push_back(stoi(output));
+            if (obj.size() != 5) continue;
+            defineObject(obj[0], obj[1], obj[2], obj[3], obj[4]);
+            obj.clear();
+            continue;
+        }
+        if (data[i] == ',') {
+            obj.push_back(stoi(output));
+            std::cout << output << "\n";
+            output = "";
+        }
+        else {
+            output += data[i];
+        }
+    }
+
+}
+
+#endif
 
 
 int main(void)
 {
     InitWindow(screenWidth, screenHeight, "cat game");
 
-    SetTargetFPS(60);
+    SetTargetFPS(framerate);
+
 
     defineObject(100, 50, playerHitbox[0], playerHitbox[1], 1);
     defineObject(0, 100, 20000, 200, 0);
@@ -166,6 +270,8 @@ int main(void)
 
     while (!WindowShouldClose())
     {
+        deltaTime = GetFrameTime();
+
         handleControls();
         handleObjects();
         handlePhysics();
@@ -179,13 +285,15 @@ int main(void)
             cameraY = ((0 - playerY) - objects[0][3] / 2);
         }
 
+        ClearBackground(GRAY);
+
         if (checkCollisions(0)) {
-            ClearBackground(GREEN);
             DrawText("overlapping", 0, 0, 20, RED);
         }
         else {
-            ClearBackground(YELLOW);
         }
+
+
 
         if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
             defineObject((GetMouseX() - screenWidth / 2) / cameraZ - cameraX, (GetMouseY() - screenHeight / 2) / cameraZ - cameraY, 10, 10, 1);
