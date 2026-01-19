@@ -6,6 +6,9 @@
 
 float framerate = 60;
 
+#define clr_selected_overlay Color{89, 208, 255, 50}
+#define clr_selected Color{89, 208, 255, 255}
+
 
 const int screenWidth = 800;
 const int screenHeight = 450;
@@ -13,6 +16,9 @@ const int screenHeight = 450;
 float cameraX = 0;
 float cameraY = 0;
 float cameraZ = 1;
+
+int camXV = 0;
+int camYV = 0;
 
 float gravity = 9.81;
 
@@ -24,19 +30,21 @@ float playerX = 0;
 float playerY = 0;
 
 bool freecam = false;
+bool editMode = true;
+
 bool onFloor = true;
 bool dragSpawning = false;
 
 int mouseX;
 int mouseY;
 
-void drawObject(int x, int y, int w, int h) {
-    DrawRectangle((x + cameraX) * cameraZ + screenWidth / 2, (y + cameraY) * cameraZ + screenHeight / 2, w*cameraZ, h*cameraZ, RED);
+void drawObject(int x, int y, int w, int h, Color clr) {
+    DrawRectangle((x + cameraX) * cameraZ + screenWidth / 2, (y + cameraY) * cameraZ + screenHeight / 2, w*cameraZ, h*cameraZ, clr);
 }
 
 void handleObjects() {
     for (int i = 0; i < objects.size(); i++) {
-        drawObject(objects[i][0], objects[i][1], objects[i][2], objects[i][3]);
+        drawObject(objects[i][0], objects[i][1], objects[i][2], objects[i][3], RED);
     }
 
 }
@@ -52,6 +60,19 @@ bool collide(int x1, int y1, int w1, int h1, int x2, int y2, int w2, int h2) {
 
 
     return false;
+}
+
+int checkMouseHover() {
+    for (int i = 0; i < objects.size(); i++) {
+        if (collide(objects[i][0], objects[i][1], objects[i][2], objects[i][3],
+
+            (GetMouseX() - screenWidth / 2) / cameraZ - cameraX, //this line is ai generated cuz I was lazy and it works really well
+            (GetMouseY() - screenHeight / 2) / cameraZ - cameraY, 1, 1)) { //this line is also ai generated cuz I was lazy and it also works really well
+
+            return i;
+        }
+    }
+    return -1;
 }
 
 bool checkCollisions(int id) {
@@ -138,23 +159,54 @@ void handleControls() {
         if (IsKeyDown(KEY_S)) {
         }
     }
-    if (IsKeyPressed(KEY_LEFT_SHIFT)) {
+    if (IsKeyPressed(KEY_LEFT_CONTROL)) {
         freecam = !freecam;
     }
 
+    //everything for edit mode down here
+    if (!editMode) return;
     if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
         dragSpawning = true;
         mouseX = GetMouseX();
         mouseY = GetMouseY();
     }
     else if (IsMouseButtonDown(MOUSE_BUTTON_LEFT)) {
-        DrawRectangle(mouseX, mouseY, GetMouseX()-mouseX, GetMouseY()-mouseY, GREEN);
+        int dx = GetMouseX() - mouseX;
+        int dy = GetMouseY() - mouseY;
+        if (dx < 15 || dy < 15) {
+            DrawRectangle(mouseX, mouseY, dx, dy, BROWN);
+        }
+        else {
+            DrawRectangle(mouseX, mouseY, dx, dy, GREEN);
+        }
+        DrawText(std::to_string(dx).c_str(), GetMouseX(), mouseY - 15, 15, LIGHTGRAY);
+        DrawText(std::to_string(dy).c_str(), mouseX - 15, GetMouseY(), 15, LIGHTGRAY);
     }
     if (IsMouseButtonReleased(MOUSE_BUTTON_LEFT) && dragSpawning) {
         dragSpawning = false;
-        spawnScreenSpace(mouseX, mouseY, (GetMouseX() - mouseX)/cameraZ, (GetMouseY() - mouseY)/cameraZ);
+        int dx = GetMouseX() - mouseX;
+        int dy = GetMouseY() - mouseY;
+        if (dx < 15 || dy < 15) return;
+        spawnScreenSpace(mouseX, mouseY, dx/cameraZ, dy/cameraZ);
     }
 
+}
+
+void setCamera(int x, int y, bool s) {
+    if (s) {
+        x = x - cameraX;
+        y = y - cameraY;
+        camXV += x;
+        camYV += y;
+        cameraX += (x / 5);
+        cameraY += (y / 5);
+        camXV = camXV / 10;
+        camYV = camYV / 10;
+    }
+    else {
+        cameraX = x;
+        cameraY = y;
+    }
 }
 
 
@@ -296,7 +348,18 @@ int main(void)
     {
 
         handleControls();
+        int hoveredObj = checkMouseHover();
+        int padding = 3;
+        if (hoveredObj != -1 && editMode) {
+            drawObject(objects[hoveredObj][0] - padding, objects[hoveredObj][1] - padding, objects[hoveredObj][2] + padding * 2, objects[hoveredObj][3] + padding * 2, clr_selected);
+        }
         handleObjects();
+        if (hoveredObj != -1 && editMode && !IsKeyDown(KEY_LEFT_SHIFT)) {
+            drawObject(objects[hoveredObj][0], objects[hoveredObj][1], objects[hoveredObj][2], objects[hoveredObj][3], clr_selected_overlay);
+            if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
+                objects.erase(objects.begin() + hoveredObj);
+            }
+        }
         handlePhysics();
 
         playerX = objects[0][0];
@@ -304,8 +367,7 @@ int main(void)
 
         //ALL THIS CODE ONLY TO MOVE THE CAMERA 😭
         if (!freecam) {
-            cameraX = ((0 - playerX) - objects[0][2] / 2);
-            cameraY = ((0 - playerY) - objects[0][3] / 2);
+            setCamera(((0 - playerX) - objects[0][2] / 2), ((0 - playerY) - objects[0][3] / 2), true);
         }
 
         ClearBackground(GRAY);
@@ -326,12 +388,15 @@ int main(void)
         //modObject(0, playerX, playerY, playerHitbox[0], playerHitbox[1]);
 
 
+        if (editMode) {
+            DrawText(std::to_string(cameraX).c_str(), 20, 20, 20, LIGHTGRAY);
+            DrawText(std::to_string(cameraY).c_str(), 20, 40, 20, LIGHTGRAY);
+            DrawText(std::to_string(freecam).c_str(), 20, 60, 20, LIGHTGRAY);
+            DrawText(std::to_string(onFloor).c_str(), 20, 80, 20, LIGHTGRAY);
+            DrawText(std::to_string(cameraZ).c_str(), 20, 100, 20, LIGHTGRAY);
+            DrawText("s to save to file", 20, 120, 20, LIGHTGRAY);
+        }
 
-        DrawText(std::to_string(cameraX).c_str(), 190, 200, 20, LIGHTGRAY);
-        DrawText(std::to_string(cameraY).c_str(), 190, 220, 20, LIGHTGRAY);
-        DrawText(std::to_string(freecam).c_str(), 190, 240, 20, LIGHTGRAY);
-        DrawText(std::to_string(onFloor).c_str(), 190, 260, 20, LIGHTGRAY);
-        DrawText(std::to_string(cameraZ).c_str(), 190, 280, 20, LIGHTGRAY);
 
         EndDrawing();
 
