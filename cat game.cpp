@@ -10,8 +10,10 @@ float framerate = 60;
 #define clr_selected Color{89, 208, 255, 255}
 
 
-const int screenWidth = 800;
-const int screenHeight = 450;
+int screenWidth = 800;
+int screenHeight = 450;
+
+float defaultWidth = 800;
 
 float cameraX = 0;
 float cameraY = 0;
@@ -38,11 +40,15 @@ bool dragSpawning = false;
 int mouseX;
 int mouseY;
 
+int oldWidth = screenWidth;
+
+float defaultWidthNumber = 0.5f / defaultWidth;
+
 void drawObject(int x, int y, int w, int h, Color clr) {
     DrawRectangle((x + cameraX) * cameraZ + screenWidth / 2, (y + cameraY) * cameraZ + screenHeight / 2, w*cameraZ, h*cameraZ, clr);
 }
 
-void handleObjects() {
+void renderObjects() {
     for (int i = 0; i < objects.size(); i++) {
         drawObject(objects[i][0], objects[i][1], objects[i][2], objects[i][3], RED);
     }
@@ -121,6 +127,23 @@ void spawnScreenSpace(int x, int y, int w, int h) {
     defineObject((x - screenWidth / 2) / cameraZ - cameraX, (y - screenHeight / 2) / cameraZ - cameraY, w, h, 1);
 }
 
+void saveStage() {
+    // Create and open a text file
+    std::ofstream file("stage.txt");
+
+    // Write to the file
+    for (int i = 0; i < objects.size(); i++) {
+        for (int j = 0; j < 5; j++) {
+            file << objects[i][j];
+            if(j<4)file << ',';
+            
+        }
+        file << ';';
+    }
+    // Close the file
+    file.close();
+}
+
 
 void handleControls() {
     if (IsKeyDown(KEY_MINUS)) {
@@ -130,6 +153,12 @@ void handleControls() {
     if (IsKeyDown(KEY_EQUAL)) {
         cameraZ *= 1.1;
         if (cameraZ > 10) cameraZ = 10;
+    }
+    if (IsKeyPressed(KEY_ONE)) {
+        if(editMode)saveStage();
+        
+    }
+    if (IsKeyPressed(KEY_TWO)) {
     }
     if (freecam) {
         if (IsKeyDown(KEY_D)) {
@@ -155,8 +184,6 @@ void handleControls() {
         if (IsKeyDown(KEY_W)) {
             if (onFloor)setYvel(0, -15);
 
-        }
-        if (IsKeyDown(KEY_S)) {
         }
     }
     if (IsKeyPressed(KEY_LEFT_CONTROL)) {
@@ -329,9 +356,11 @@ void clearStage() {
 
 int main(void)
 {
+    SetConfigFlags(FLAG_WINDOW_RESIZABLE);
     InitWindow(screenWidth, screenHeight, "cat game");
 
     SetTargetFPS(framerate);
+
 
 
     defineObject(100, 50, playerHitbox[0], playerHitbox[1], 1);
@@ -346,17 +375,26 @@ int main(void)
 
     while (!WindowShouldClose())
     {
+        screenWidth = GetScreenWidth();
+        screenHeight = GetScreenHeight();
+
+        if (oldWidth != screenWidth) {
+            //defaultWidthNumber = cameraZ / defaultWidth;
+            cameraZ = screenWidth * defaultWidthNumber;
+            oldWidth = screenWidth;
+        }
 
         handleControls();
         int hoveredObj = checkMouseHover();
+        bool isSelecting = hoveredObj != -1 && editMode && !IsKeyDown(KEY_LEFT_SHIFT);
         int padding = 3;
-        if (hoveredObj != -1 && editMode) {
+        if (isSelecting) {
             drawObject(objects[hoveredObj][0] - padding, objects[hoveredObj][1] - padding, objects[hoveredObj][2] + padding * 2, objects[hoveredObj][3] + padding * 2, clr_selected);
         }
-        handleObjects();
-        if (hoveredObj != -1 && editMode && !IsKeyDown(KEY_LEFT_SHIFT)) {
+        renderObjects();
+        if (isSelecting) {
             drawObject(objects[hoveredObj][0], objects[hoveredObj][1], objects[hoveredObj][2], objects[hoveredObj][3], clr_selected_overlay);
-            if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
+            if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT) && hoveredObj>1) {
                 objects.erase(objects.begin() + hoveredObj);
             }
         }
@@ -394,7 +432,7 @@ int main(void)
             DrawText(std::to_string(freecam).c_str(), 20, 60, 20, LIGHTGRAY);
             DrawText(std::to_string(onFloor).c_str(), 20, 80, 20, LIGHTGRAY);
             DrawText(std::to_string(cameraZ).c_str(), 20, 100, 20, LIGHTGRAY);
-            DrawText("s to save to file", 20, 120, 20, LIGHTGRAY);
+            DrawText("press 1 to save to file", 20, 120, 20, LIGHTGRAY);
         }
 
 
