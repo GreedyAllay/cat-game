@@ -321,6 +321,13 @@ int main(void)
         }
 
 
+
+        if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
+            defineObject((GetMouseX() - screenWidth / 2) / cameraZ - cameraX, (GetMouseY() - screenHeight / 2) / cameraZ - cameraY, 25, 25, 1);
+            //some parts of only this line above is ai generated because I couldn't figure out for the love of me how to do this with zoom
+        }
+
+
         BeginDrawing();
 
 
