@@ -39,10 +39,12 @@ bool dragSpawning = false;
 
 int mouseX;
 int mouseY;
+float initialZoom = 1;
 
 int oldWidth = screenWidth;
+int oldZoom = initialZoom;
 
-float defaultWidthNumber = 0.5f / defaultWidth;
+float defaultWidthNumber = initialZoom / defaultWidth;
 
 void drawObject(int x, int y, int w, int h, Color clr) {
     DrawRectangle((x + cameraX) * cameraZ + screenWidth / 2, (y + cameraY) * cameraZ + screenHeight / 2, w*cameraZ, h*cameraZ, clr);
@@ -147,12 +149,12 @@ void saveStage() {
 
 void handleControls() {
     if (IsKeyDown(KEY_MINUS)) {
-        cameraZ /= 1.1;
-        if (cameraZ < .01) cameraZ = .01;
+        initialZoom /= 1.1;
+        if (initialZoom < .01) initialZoom = .01;
     }
     if (IsKeyDown(KEY_EQUAL)) {
-        cameraZ *= 1.1;
-        if (cameraZ > 10) cameraZ = 10;
+        initialZoom *= 1.1;
+        if (initialZoom > 10) initialZoom = 10;
     }
     if (IsKeyPressed(KEY_ONE)) {
         if(editMode)saveStage();
@@ -378,10 +380,11 @@ int main(void)
         screenWidth = GetScreenWidth();
         screenHeight = GetScreenHeight();
 
-        if (oldWidth != screenWidth) {
-            //defaultWidthNumber = cameraZ / defaultWidth;
+        if (oldWidth != screenWidth || oldZoom != initialZoom) {
+            defaultWidthNumber = initialZoom / defaultWidth;
             cameraZ = screenWidth * defaultWidthNumber;
             oldWidth = screenWidth;
+            oldZoom = initialZoom;
         }
 
         handleControls();
@@ -431,7 +434,7 @@ int main(void)
             DrawText(std::to_string(cameraY).c_str(), 20, 40, 20, LIGHTGRAY);
             DrawText(std::to_string(freecam).c_str(), 20, 60, 20, LIGHTGRAY);
             DrawText(std::to_string(onFloor).c_str(), 20, 80, 20, LIGHTGRAY);
-            DrawText(std::to_string(cameraZ).c_str(), 20, 100, 20, LIGHTGRAY);
+            DrawText(std::to_string(initialZoom).c_str(), 20, 100, 20, LIGHTGRAY);
             DrawText("press 1 to save to file", 20, 120, 20, LIGHTGRAY);
         }
 
