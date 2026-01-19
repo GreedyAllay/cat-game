@@ -151,9 +151,8 @@ void handleControls() {
         DrawRectangle(mouseX, mouseY, GetMouseX()-mouseX, GetMouseY()-mouseY, GREEN);
     }
     if (IsMouseButtonReleased(MOUSE_BUTTON_LEFT) && dragSpawning) {
-        std::cout << "WHAAAATAAAAAAATTAAAA";
         dragSpawning = false;
-        spawnScreenSpace(mouseX, mouseY, GetMouseX() - mouseX, GetMouseY() - mouseY);
+        spawnScreenSpace(mouseX, mouseY, (GetMouseX() - mouseX)/cameraZ, (GetMouseY() - mouseY)/cameraZ);
     }
 
 }
@@ -244,7 +243,6 @@ void loadStage(std::string data) {
             std::cout << output << "\n";
             output = "";
             if (obj.size() == 5) {
-                std::cout << "WHAAAT";
                 defineObject(obj[0], obj[1], obj[2], obj[3], obj[4]);
             }
             if (data[i] == ';') obj.clear();
@@ -285,8 +283,6 @@ int main(void)
 
 
     defineObject(100, 50, playerHitbox[0], playerHitbox[1], 1);
-    defineObject(0, 100, 20000, 200, 0);
-    defineObject(-300, -500, 400, 2000, 0);
 
 
     ClearBackground(RAYWHITE);
