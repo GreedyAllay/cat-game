@@ -400,6 +400,8 @@ int main(void)
 
     SetTargetFPS(framerate);
 
+    std::cout << GetScreenHeight() << "im sext and i know it";
+
 
     defineObject(100, 0, playerHitbox[0], playerHitbox[1], 1);
 
