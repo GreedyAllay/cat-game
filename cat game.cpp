@@ -50,6 +50,8 @@ int oldWindowWidth;
 int oldWindowHeight;
 bool isFullscreen = false;
 
+float zoomVel = 0;
+
 float defaultWidthNumber = initialZoom / defaultWidth;
 
 struct {
@@ -222,15 +224,19 @@ void loadStageFromFile(std::string id) {
 void handleControls() {
     if (IsKeyDown(KEY_MINUS)) {
         initialZoom /= 1.1;
-        if (initialZoom < .01) initialZoom = .01;
     }
     if (IsKeyDown(KEY_EQUAL)) {
         initialZoom *= 1.1;
-        if (initialZoom > 10) initialZoom = 10;
     }
     if (IsKeyPressed(KEY_ONE)) {
         if(editMode)saveStage();
     }
+    zoomVel += GetMouseWheelMove()/75;
+    initialZoom += zoomVel;
+    zoomVel /= 1.3;
+    if (initialZoom > 10) initialZoom = 10;
+    if (initialZoom < .01) initialZoom = .01;
+
     if (IsKeyPressed(KEY_F11)) {
         if (isFullscreen) {
             ToggleFullscreen();
