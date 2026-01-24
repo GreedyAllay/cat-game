@@ -26,9 +26,9 @@ int camYV = 0;
 
 float gravity = 9.81;
 
-std::vector<std::vector<int>> objects; //0 x, 1 y, 2 w, 3 h, 4 physics, 5 xv, 6 yv, 7 onfloor
+std::vector<std::vector<int>> objects; //0 x, 1 y, 2 w, 3 h, 4 physics, 5 xv, 6 yv, 7 onfloor, texture (0 = box)
 
-std::vector<int> playerHitbox = { 50, 100 }; //w, h
+std::vector<int> playerHitbox = { 20, 100 }; //w, h
 
 float playerX = 0;
 float playerY = 0;
@@ -52,20 +52,42 @@ bool isFullscreen = false;
 
 float defaultWidthNumber = initialZoom / defaultWidth;
 
+struct {
+    Texture2D body;
+} textures;
+
+void initTextures() {
+    textures.body = LoadTexture("assets/player.png");
+}
+
+
 void drawObject(int x, int y, int w, int h, Color clr) {
     DrawRectangle((x + cameraX) * cameraZ + screenWidth / 2, (y + cameraY) * cameraZ + screenHeight / 2, w*cameraZ, h*cameraZ, clr);
+}
+
+float screenToWorldX(int x) { return (x + cameraX) * cameraZ + screenWidth / 2; } float screenToWorldY(int y) { return (y + cameraY) * cameraZ + screenHeight / 2; }
+float screenToWorldSize(float s) { return s * cameraZ; }
+
+void drawObjectTexture(int x, int y, int scale, Texture2D texture, Color clr) {
+    DrawTextureEx(texture, { (x + cameraX) * cameraZ + screenWidth / 2, (y + cameraY) * cameraZ + screenHeight / 2}, 0, (scale/33)*cameraZ, clr);
 }
 
 void renderObjects() {
     for (int i = 0; i < objects.size(); i++) {
         Color clr;
-    if (objects[i][4]) {
-        clr = RED;
-    }
-    else {
-        clr = BLUE;
-    }
-        drawObject(objects[i][0], objects[i][1], objects[i][2], objects[i][3], clr);
+        if (i == 0) continue;
+        if (!objects[i][8]) {
+            if (objects[i][4]) {
+                clr = RED;
+            }
+            else {
+                clr = BLUE;
+            }
+            drawObject(objects[i][0], objects[i][1], objects[i][2], objects[i][3], clr);
+        }
+        else {
+            drawObjectTexture(objects[i][0], objects[i][1], objects[i][3], textures.body, WHITE);
+        }
     }
 
 }
@@ -136,13 +158,13 @@ void setXvel(int id, int xv) { objects[id][5] = xv; }
 void setYvel(int id, int yv) { objects[id][6] = yv; }
 
 
-void defineObject(int x, int y, int w, int h, bool physics) {
-    objects.push_back({ x, y, w, h, physics, 0, 0, 0 });
+void defineObject(int x, int y, int w, int h, bool physics, int texture) {
+    objects.push_back({ x, y, w, h, physics, 0, 0, 0, texture });
 }
 
 void spawnScreenSpace(int x, int y, int w, int h) {
 
-    defineObject((x - screenWidth / 2) / cameraZ - cameraX, (y - screenHeight / 2) / cameraZ - cameraY, w, h, 1);
+    defineObject((x - screenWidth / 2) / cameraZ - cameraX, (y - screenHeight / 2) / cameraZ - cameraY, w, h, 1, 0);
 }
 
 void saveStage() {
@@ -172,7 +194,7 @@ void loadStage(std::string data) {
             std::cout << output << "\n";
             output = "";
             if (obj.size() == 5) {
-                defineObject(obj[0], obj[1], obj[2], obj[3], obj[4]);
+                defineObject(obj[0], obj[1], obj[2], obj[3], obj[4], 0);
             }
             if (data[i] == ';') obj.clear();
             continue;
@@ -391,17 +413,24 @@ void clearStage() {
     }
 }
 
+void renderPlayer() {
+    float playerScale = 2.69;
+    DrawTextureEx(textures.body, { screenToWorldX(playerX-15), screenToWorldY(playerY-5)}, 0, screenToWorldSize(playerScale), WHITE);
+}
+
 
 
 int main(void)
 {
     SetConfigFlags(FLAG_WINDOW_RESIZABLE);
     InitWindow(screenWidth, screenHeight, "cat game");
+    textures.body = LoadTexture("assets/playerbody.png");
 
     SetTargetFPS(framerate);
 
+    initTextures();
 
-    defineObject(100, 0, playerHitbox[0], playerHitbox[1], 1);
+    defineObject(100, 0, playerHitbox[0], playerHitbox[1], 1, 0);
 
 
     ClearBackground(RAYWHITE);
@@ -474,6 +503,7 @@ int main(void)
             DrawText("press 1 to save to file", 20, 120, 20, LIGHTGRAY);
         }
 
+        renderPlayer();
 
         EndDrawing();
 
