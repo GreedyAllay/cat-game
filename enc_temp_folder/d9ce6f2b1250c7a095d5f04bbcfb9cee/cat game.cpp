@@ -425,11 +425,6 @@ void clearStage() {
     }
 }
 
-void drawBodyPart(Texture2D texture, int x, int y, int scale) {
-    DrawTextureEx(textures.ref, { screenToWorldX(playerX), screenToWorldY(playerY) }, 0, screenToWorldSize(playerScale), RED);
-
-}
-
 void renderPlayer() {
     float playerScale = 2.69;
     int offsX = -15;
@@ -445,6 +440,9 @@ void renderPlayer() {
 
     //bpdy
     DrawTextureEx(textures.body, { screenToWorldX((playerX + offsX) + 10), screenToWorldY((playerY + offsY) + 30) }, 0, screenToWorldSize(playerScale), WHITE);
+
+
+    std::cout << textures.body.width;
 
 
 }
