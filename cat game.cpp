@@ -59,6 +59,7 @@ struct {
     Texture2D head;
     Texture2D tail;
     Texture2D body;
+    Texture2D ok;
 } textures;
 
 void initTextures() {
@@ -66,6 +67,7 @@ void initTextures() {
     textures.head = LoadTexture("assets/head.png");
     textures.tail = LoadTexture("assets/tail.png");
     textures.body = LoadTexture("assets/body.png");
+    textures.ok = LoadTexture("assets/ok.png");
 }
 
 
@@ -425,15 +427,58 @@ void clearStage() {
     }
 }
 
-void drawBodyPart(Texture2D texture, int x, int y, int scale) {
-    DrawTextureEx(textures.ref, { screenToWorldX(playerX), screenToWorldY(playerY) }, 0, screenToWorldSize(playerScale), RED);
+void drawBodyPart(Texture2D texture, int x, int y, float scale, int clampSide) {
+    //0 = center, 1 = left, 2 = right, 3 = bottom, 4 = top
+    float x1;
+    float y1;
+    float centerX = playerX;
+    float centerY = playerY;
+    if (clampSide == 0) { //center image
+        float w = texture.width * scale;
+        float h = texture.height * scale;
 
+        float wx = playerX - w / 2 + x;
+        float wy = playerY - h / 2 + y;
+
+        Vector2 pos = {
+            screenToWorldX(wx),
+            screenToWorldY(wy)
+        };
+
+        DrawTextureEx(texture,
+            { screenToWorldX((centerX) + x), screenToWorldY((centerY - texture.height / 2) + y) }, 0, screenToWorldSize(scale), RED);
+    }
+
+
+
+    else if (clampSide == 1) { //texture should clamp to left
+        DrawTextureEx(texture, { screenToWorldX((centerX) + x), screenToWorldY((centerY + texture.height / 2) + y) }, 0, screenToWorldSize(scale), RED);
+    }
+    else if (clampSide == 2) { //texture should clamp to right
+        DrawTextureEx(texture, { screenToWorldX((centerX + texture.width) + x), screenToWorldY((centerY + texture.height / 2) + y) }, 0, screenToWorldSize(scale), RED);
+    }
+    else if (clampSide == 3) { //texture should clamp to right
+        DrawTextureEx(texture, { screenToWorldX((centerX - texture.width/2) + x), screenToWorldY((centerY - texture.height) + y) }, 0, screenToWorldSize(scale), RED);
+    }
+    else if (clampSide == 4) { //texture should clamp to right
+        DrawTextureEx(texture, { screenToWorldX((centerX - texture.width / 2) + x), screenToWorldY((centerY + texture.height) + y) }, 0, screenToWorldSize(scale), RED);
+    }
+
+    DrawRectangle(screenToWorldX(playerX), screenToWorldY(playerY), 20, 20, GREEN);
 }
 
 void renderPlayer() {
     float playerScale = 2.69;
     int offsX = -15;
     int offsY = -5;
+    drawBodyPart(textures.ok, 0, 0, playerScale, 0);
+
+    
+    
+    
+    
+    
+    return;
     //body
     DrawTextureEx(textures.ref, { screenToWorldX((playerX + offsX)), screenToWorldY((playerY + offsY)) }, 0, screenToWorldSize(playerScale), RED);
 
@@ -498,8 +543,8 @@ int main(void)
         }
         handlePhysics();
 
-        playerX = objects[0][0];
-        playerY = objects[0][1];
+        playerX = objects[0][0]+objects[0][2]/2;
+        playerY = objects[0][1]+objects[0][3]/2;
 
         //ALL THIS CODE ONLY TO MOVE THE CAMERA 😭
         if (!freecam) {
