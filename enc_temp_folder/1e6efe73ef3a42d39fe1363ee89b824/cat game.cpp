@@ -75,7 +75,7 @@ void drawObject(int x, int y, int w, int h, Color clr) {
     DrawRectangle((x + cameraX) * cameraZ + screenWidth / 2, (y + cameraY) * cameraZ + screenHeight / 2, w*cameraZ, h*cameraZ, clr);
 }
 
-float screenToWorldX(int x) { return (x + cameraX) * cameraZ + screenWidth / 2; } float screenToWorldY(int y) { return (y + cameraY) * cameraZ + screenHeight / 2; }
+float screenToWorldX(float x) { return (x + cameraX) * cameraZ + screenWidth / 2; } float screenToWorldY(float y) { return (y + cameraY) * cameraZ + screenHeight / 2; }
 float screenToWorldSize(float s) { return s * cameraZ; }
 
 void drawObjectTexture(int x, int y, int scale, Texture2D texture, Color clr) {
@@ -323,7 +323,7 @@ void handleControls() {
 // so proud of this camera system! It's my own design (pretty much like anything here) and works incredibly well.
 // Ported it from my game Cattie's World 2
 void setCamera(int x, int y, bool s) {
-    int smoothness = 10;
+    int smoothness = 5;
     int damping = 100;
     if (s) {
         x = x - cameraX;
@@ -427,43 +427,26 @@ void clearStage() {
     }
 }
 
-void drawBodyPart(Texture2D texture, int x, int y, float scale, int clampSide) {
-    //0 = center, 1 = left, 2 = right, 3 = bottom, 4 = top
-    float x1;
-    float y1;
-    float centerX = playerX;
-    float centerY = playerY;
-    if (clampSide == 0) { //center image
-        DrawTextureEx(texture, { screenToWorldX((centerX) + x), screenToWorldY((centerY - texture.height / 2) + y) }, 0, screenToWorldSize(scale), RED);
-    }
-    else if (clampSide == 1) { //texture should clamp to left
-        DrawTextureEx(texture, { screenToWorldX((centerX) + x), screenToWorldY((centerY + texture.height / 2) + y) }, 0, screenToWorldSize(scale), RED);
-    }
-    else if (clampSide == 2) { //texture should clamp to right
-        DrawTextureEx(texture, { screenToWorldX((centerX + texture.width) + x), screenToWorldY((centerY + texture.height / 2) + y) }, 0, screenToWorldSize(scale), RED);
-    }
-    else if (clampSide == 3) { //texture should clamp to right
-        DrawTextureEx(texture, { screenToWorldX((centerX - texture.width/2) + x), screenToWorldY((centerY - texture.height) + y) }, 0, screenToWorldSize(scale), RED);
-    }
-    else if (clampSide == 4) { //texture should clamp to right
-        DrawTextureEx(texture, { screenToWorldX((centerX - texture.width / 2) + x), screenToWorldY((centerY + texture.height) + y) }, 0, screenToWorldSize(scale), RED);
-    }
+void drawBodyPart(Texture2D texture, float worldX, float worldY, float scale, Vector2 anchor)
+{
+    Rectangle src = { 0, 0, (float)texture.width, (float)texture.height };
 
-    DrawRectangle(screenToWorldX(playerX), screenToWorldY(playerY), 20, 20, GREEN);
-}
+    Rectangle dst = {
+        (worldX + cameraX) * cameraZ,
+        (worldY + cameraY) * cameraZ,
+        texture.width * scale * cameraZ,
+        texture.height * scale * cameraZ
+    };
+
+    DrawTexturePro(texture, src, dst, anchor, 0, WHITE);
+};
 
 void renderPlayer() {
-    float playerScale = 2.69;
+    float playerScale = 2.7;
     int offsX = -15;
     int offsY = -5;
-    drawBodyPart(textures.ok, 0, 0, playerScale, 0);
-
-    
-    
-    
-    
-    
-    return;
+    //maybe make the players color be influenced by nearby light and how bright the scene is!
+    // 
     //body
     DrawTextureEx(textures.ref, { screenToWorldX((playerX + offsX)), screenToWorldY((playerY + offsY)) }, 0, screenToWorldSize(playerScale), RED);
 
@@ -533,7 +516,7 @@ int main(void)
 
         //ALL THIS CODE ONLY TO MOVE THE CAMERA 😭
         if (!freecam) {
-            setCamera(((0 - playerX) - objects[0][2] / 2), ((0 - playerY) - objects[0][3] / 2), true);
+            setCamera(((0 - playerX) - objects[0][2] / 2), ((0 - playerY) - objects[0][3] / 2)+playerHitbox[1]/2, true);
         }
 
         ClearBackground(GRAY);
