@@ -28,7 +28,7 @@ float gravity = 9.81;
 
 std::vector<std::vector<int>> objects; //0 x, 1 y, 2 w, 3 h, 4 physics, 5 xv, 6 yv, 7 onfloor, texture (0 = box)
 
-std::vector<int> playerHitbox = { 20, 100 }; //w, h
+std::vector<int> playerHitbox = { 19, 100 }; //w, h
 
 float playerX = 0;
 float playerY = 0;
@@ -38,6 +38,7 @@ bool editMode = true;
 
 bool onFloor = true;
 bool dragSpawning = false;
+bool mirrorPlayer = false;
 
 int mouseX;
 int mouseY;
@@ -54,32 +55,49 @@ float zoomVel = 0;
 
 float defaultWidthNumber = initialZoom / defaultWidth;
 
+float timer = 0;
+
+struct {
+    bool walking;
+    bool crouching;
+} playerAnimation;
+
 struct {
     Texture2D ref;
+    Texture2D body;
     Texture2D head;
     Texture2D tail;
-    Texture2D body;
-    Texture2D ok;
+    Texture2D tail_walk_1;
+    Texture2D arm;
+    Texture2D hand;
+    Texture2D sword;
+    Texture2D leg;
+    Texture2D foot;
 } textures;
 
 void initTextures() {
     textures.ref = LoadTexture("assets/player.png");
+    textures.body = LoadTexture("assets/body.png");
     textures.head = LoadTexture("assets/head.png");
     textures.tail = LoadTexture("assets/tail.png");
-    textures.body = LoadTexture("assets/body.png");
-    textures.ok = LoadTexture("assets/ok.png");
+    textures.tail_walk_1 = LoadTexture("assets/tail-walk-1.png");
+    textures.arm = LoadTexture("assets/arm.png");
+    textures.hand = LoadTexture("assets/hand.png");
+    textures.sword = LoadTexture("assets/sword.png");
+    textures.leg = LoadTexture("assets/leg.png");
+    textures.foot = LoadTexture("assets/foot.png");
 }
 
 
 void drawObject(int x, int y, int w, int h, Color clr) {
-    DrawRectangle((x + cameraX) * cameraZ + screenWidth / 2, (y + cameraY) * cameraZ + screenHeight / 2, w*cameraZ, h*cameraZ, clr);
+    DrawRectangle((x + cameraX) * cameraZ + screenWidth / 2, (y + cameraY) * cameraZ + screenHeight / 2, w * cameraZ, h * cameraZ, clr);
 }
 
 float screenToWorldX(float x) { return (x + cameraX) * cameraZ + screenWidth / 2; } float screenToWorldY(float y) { return (y + cameraY) * cameraZ + screenHeight / 2; }
 float screenToWorldSize(float s) { return s * cameraZ; }
 
 void drawObjectTexture(int x, int y, int scale, Texture2D texture, Color clr) {
-    DrawTextureEx(texture, { (x + cameraX) * cameraZ + screenWidth / 2, (y + cameraY) * cameraZ + screenHeight / 2}, 0, (scale/33)*cameraZ, clr);
+    DrawTextureEx(texture, { (x + cameraX) * cameraZ + screenWidth / 2, (y + cameraY) * cameraZ + screenHeight / 2 }, 0, (scale / 33) * cameraZ, clr);
 }
 
 void renderObjects() {
@@ -185,8 +203,8 @@ void saveStage() {
     for (int i = 0; i < objects.size(); i++) {
         for (int j = 0; j < 5; j++) {
             file << objects[i][j];
-            if(j<4)file << ',';
-            
+            if (j < 4)file << ',';
+
         }
         file << ';';
     }
@@ -201,7 +219,6 @@ void loadStage(std::string data) {
         if (data[i] == ' ') continue;
         if (data[i] == ',' || data[i] == ';') {
             obj.push_back(stoi(output));
-            std::cout << output << "\n";
             output = "";
             if (obj.size() == 5) {
                 defineObject(obj[0], obj[1], obj[2], obj[3], obj[4], 0);
@@ -237,9 +254,9 @@ void handleControls() {
         initialZoom *= 1.1;
     }
     if (IsKeyPressed(KEY_ONE)) {
-        if(editMode)saveStage();
+        if (editMode)saveStage();
     }
-    zoomVel += GetMouseWheelMove()/75;
+    zoomVel += GetMouseWheelMove() / 75;
     initialZoom += zoomVel;
     zoomVel /= 1.3;
     if (initialZoom > 10) initialZoom = 10;
@@ -263,16 +280,16 @@ void handleControls() {
     }
     if (freecam) {
         if (IsKeyDown(KEY_D)) {
-            cameraX -= 10;
+            cameraX -= 10 / cameraZ;
         }
         if (IsKeyDown(KEY_A)) {
-            cameraX += 10;
+            cameraX += 10 /cameraZ;
         }
         if (IsKeyDown(KEY_W)) {
-            cameraY += 10;
+            cameraY += 10 / cameraZ;
         }
         if (IsKeyDown(KEY_S)) {
-            cameraY -= 10;
+            cameraY -= 10 / cameraZ;
         }
     }
     else {
@@ -315,7 +332,7 @@ void handleControls() {
         int dx = GetMouseX() - mouseX;
         int dy = GetMouseY() - mouseY;
         if (dx < 15 || dy < 15) return;
-        spawnScreenSpace(mouseX, mouseY, dx/cameraZ, dy/cameraZ);
+        spawnScreenSpace(mouseX, mouseY, dx / cameraZ, dy / cameraZ);
     }
 
 }
@@ -323,7 +340,7 @@ void handleControls() {
 // so proud of this camera system! It's my own design (pretty much like anything here) and works incredibly well.
 // Ported it from my game Cattie's World 2
 void setCamera(int x, int y, bool s) {
-    int smoothness = 5;
+    int smoothness = 10;
     int damping = 100;
     if (s) {
         x = x - cameraX;
@@ -373,11 +390,11 @@ void unstuckObjects() {
     for (int i = 0; i < objects.size(); i++) {
         //left
         if (checkCollisions(i))
-        for (int j = 0; j < 100; j++) {
-            if (!checkCollisions(j)) break;
-            objects[i][0] -= 1;
-            steps++;
-        }
+            for (int j = 0; j < 100; j++) {
+                if (!checkCollisions(j)) break;
+                objects[i][0] -= 1;
+                steps++;
+            }
         stepCounts.push_back(steps);
         steps = 0;
 
@@ -427,45 +444,59 @@ void clearStage() {
     }
 }
 
-void drawBodyPart(Texture2D texture, float worldX, float worldY, float scale, Vector2 anchor)
-{
-    Rectangle src = { 0, 0, (float)texture.width, (float)texture.height };
+void drawBodyPart(Texture2D texture, int x, int y, int scale) {
+    
+    DrawTextureEx(textures.ref, { screenToWorldX(playerX - texture.width / 2), screenToWorldY(playerY - texture.height / 2) }, 0, screenToWorldSize(scale), RED);
 
-    Rectangle dst = {
-        (worldX + cameraX) * cameraZ,
-        (worldY + cameraY) * cameraZ,
-        texture.width * scale * cameraZ,
-        texture.height * scale * cameraZ
-    };
-
-    DrawTexturePro(texture, src, dst, anchor, 0, WHITE);
-};
+}
 
 void renderPlayer() {
-    float playerScale = 2.7;
-    int offsX = -15;
-    int offsY = -5;
-    //maybe make the players color be influenced by nearby light and how bright the scene is!
-    drawBodyPart(textures.ref, 12, -2.65, playerScale, {playerX, playerY});
-    //drawBodyPart(textures.body, 0, -4, playerScale, 0, WHITE);
+    float playerScale = 2.8;
+    float offsX = -31;
+    float offsY = -14.5;
+    int t = round(timer*10);
+    Texture2D texture;
+    int invertPlayer;
+    if (mirrorPlayer) {
+        invertPlayer = -1;
+    }
+    else {
+        invertPlayer = 1;
+    }
 
-    
-    
-    
-    
-    
-    return;
+    //reference
+    //DrawTextureEx(textures.ref, { screenToWorldX((playerX + offsX)), screenToWorldY((playerY + offsY)) }, 0, screenToWorldSize(playerScale), RED);
+
     //body
-    DrawTextureEx(textures.ref, { screenToWorldX((playerX + offsX)), screenToWorldY((playerY + offsY)) }, 0, screenToWorldSize(playerScale), RED);
+    DrawTextureEx(textures.body, { screenToWorldX((playerX + offsX)), screenToWorldY((playerY + offsY)) }, 0, screenToWorldSize(playerScale), WHITE);
 
     //head
-    DrawTextureEx(textures.head, { screenToWorldX((playerX + offsX) + 13), screenToWorldY((playerY + offsY))}, 0, screenToWorldSize(playerScale), WHITE);
+    DrawTextureEx(textures.head, { screenToWorldX((playerX + offsX)), screenToWorldY((playerY + offsY)) }, 0, screenToWorldSize(playerScale), WHITE);
+
+    //arm
+    DrawTextureEx(textures.arm, { screenToWorldX((playerX + offsX)), screenToWorldY((playerY + offsY)) }, 0, screenToWorldSize(playerScale), WHITE);
+
+    //sword
+    DrawTextureEx(textures.sword, { screenToWorldX((playerX + offsX)), screenToWorldY((playerY + offsY)) }, 0, screenToWorldSize(playerScale), WHITE);
+
+    //hand
+    DrawTextureEx(textures.hand, { screenToWorldX((playerX + offsX)), screenToWorldY((playerY + offsY)) }, 0, screenToWorldSize(playerScale), WHITE);
+
+        texture = textures.tail;
+        if (playerAnimation.walking) {
+            if (t % 2 == 0) {
+                texture = textures.tail_walk_1;
+            }
+        }
+        DrawTextureEx(texture, { screenToWorldX((playerX + offsX)), screenToWorldY((playerY + offsY)) }, 0, screenToWorldSize(playerScale), WHITE);
 
     //tail
-    DrawTextureEx(textures.tail, { screenToWorldX((playerX + offsX) ), screenToWorldY((playerY + offsY) + 59) }, 0, screenToWorldSize(playerScale), WHITE);
 
-    //bpdy
-    DrawTextureEx(textures.body, { screenToWorldX((playerX + offsX) + 10), screenToWorldY((playerY + offsY) + 30) }, 0, screenToWorldSize(playerScale), WHITE);
+    //leg
+    DrawTextureEx(textures.leg, { screenToWorldX((playerX + offsX)), screenToWorldY((playerY + offsY)) }, 0, screenToWorldSize(playerScale), WHITE);
+
+    //foot
+    DrawTextureEx(textures.foot, { screenToWorldX((playerX + offsX)), screenToWorldY((playerY + offsY)) }, 0, screenToWorldSize(playerScale), WHITE);
 
 
 }
@@ -484,15 +515,17 @@ int main(void)
     defineObject(100, 0, playerHitbox[0], playerHitbox[1], 1, 0);
 
 
-    ClearBackground(RAYWHITE);
-
-
     loadStageFromFile("1");
 
     //clearStage();
 
+    playerAnimation.walking = true;
+
     while (!WindowShouldClose())
     {
+        timer += 1 / framerate;
+
+
         screenWidth = GetScreenWidth();
         screenHeight = GetScreenHeight();
 
@@ -513,21 +546,21 @@ int main(void)
         renderObjects();
         if (isSelecting) {
             drawObject(objects[hoveredObj][0], objects[hoveredObj][1], objects[hoveredObj][2], objects[hoveredObj][3], clr_selected_overlay);
-            if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT) && hoveredObj>1) {
+            if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT) && hoveredObj > 1) {
                 objects.erase(objects.begin() + hoveredObj);
             }
         }
         handlePhysics();
 
-        playerX = objects[0][0]+objects[0][2]/2;
-        playerY = objects[0][1]+objects[0][3]/2;
+        playerX = objects[0][0];
+        playerY = objects[0][1];
 
         //ALL THIS CODE ONLY TO MOVE THE CAMERA 😭
         if (!freecam) {
-            setCamera(((0 - playerX) - objects[0][2] / 2), ((0 - playerY) - objects[0][3] / 2)+playerHitbox[1]/2, true);
+            setCamera(((0 - playerX) - objects[0][2] / 2), ((0 - playerY) - objects[0][3] / 2), true);
         }
 
-        ClearBackground(GRAY);
+        ClearBackground(DARKGRAY);
 
         if (checkCollisions(0)) {
             DrawText("overlapping", 0, 0, 20, RED);
