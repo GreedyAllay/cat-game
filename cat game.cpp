@@ -40,6 +40,8 @@ bool onFloor = true;
 bool dragSpawning = false;
 bool mirrorPlayer = false;
 
+std::string character = "orange";
+
 int mouseX;
 int mouseY;
 float initialZoom = 2; //.5
@@ -51,7 +53,10 @@ int oldWindowWidth;
 int oldWindowHeight;
 bool isFullscreen = false;
 
+int walkFrame = 0;
+
 float zoomVel = 0;
+
 
 float defaultWidthNumber = initialZoom / defaultWidth;
 
@@ -73,6 +78,8 @@ struct {
     Texture2D sword;
     Texture2D leg;
     Texture2D foot;
+    std::vector<Texture2D> walk;
+
 } textures;
 
 void initTextures() {
@@ -85,8 +92,14 @@ void initTextures() {
     textures.hand = LoadTexture("assets/hand.png");
     textures.sword = LoadTexture("assets/sword.png");
     textures.leg = LoadTexture("assets/leg.png");
-    textures.foot = LoadTexture("assets/foot.png");
+    for (int i = 0; i < 8; i++) {
+        //see this is some real c++ bullshit right there man
+        std::string path = "assets/characters/" + character + "/walk" + std::to_string(i+1).c_str() + ".png";
+        textures.walk.push_back(LoadTexture(path.c_str()));
+    }
 }
+
+
 
 
 void drawObject(int x, int y, int w, int h, Color clr) {
@@ -454,7 +467,7 @@ void renderPlayer() {
     float playerScale = 2.8;
     float offsX = -31;
     float offsY = -14.5;
-    int t = round(timer*10);
+    int t = round(timer*1);
     Texture2D texture;
     int invertPlayer;
     if (mirrorPlayer) {
@@ -463,6 +476,17 @@ void renderPlayer() {
     else {
         invertPlayer = 1;
     }
+
+
+    DrawTextureEx(textures.walk[walkFrame], {screenToWorldX((playerX + offsX)), screenToWorldY((playerY + offsY))}, 0, screenToWorldSize(playerScale), WHITE);
+
+    if ((int)timer % 5 > 1) {
+        walkFrame++;
+        if (walkFrame > 7) { walkFrame = 0; }
+    }
+
+    std::cout << walkFrame << "\n";
+    return;
 
     //reference
     //DrawTextureEx(textures.ref, { screenToWorldX((playerX + offsX)), screenToWorldY((playerY + offsY)) }, 0, screenToWorldSize(playerScale), RED);
@@ -518,6 +542,11 @@ int main(void)
     loadStageFromFile("1");
 
     //clearStage();
+
+    for (int i = 0; i < textures.walk.size(); i++) {
+        if (textures.walk[i].id == 0) std::cout << "Failed to load walk" << i + 1 << ".png\n";
+    }
+
 
     playerAnimation.walking = true;
 
@@ -585,6 +614,7 @@ int main(void)
             DrawText(std::to_string(onFloor).c_str(), 20, 80, 20, LIGHTGRAY);
             DrawText(std::to_string(initialZoom).c_str(), 20, 100, 20, LIGHTGRAY);
             DrawText("press 1 to save to file", 20, 120, 20, LIGHTGRAY);
+            DrawText(std::to_string(walkFrame).c_str(), 20, 140, 20, LIGHTGRAY);
         }
 
         renderPlayer();
